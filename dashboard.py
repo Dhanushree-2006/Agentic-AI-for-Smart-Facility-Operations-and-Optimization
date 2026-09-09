@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from auth import create_database, create_user, check_login
 
 # -----------------------------
 # PAGE CONFIGURATION
@@ -9,6 +10,7 @@ st.set_page_config(
     page_icon="🏢",
     layout="wide"
 )
+create_database()
 
 # -----------------------------
 # LOGIN SYSTEM
@@ -64,10 +66,13 @@ else:
     st.sidebar.write("Facility Intelligence Platform")
 
     page = st.sidebar.radio(
-        "Navigation",
-        ["Energy Dashboard", "Energy Agent"]
-    )
-
+    "Navigation",
+    [
+        "Energy Dashboard",
+        "Energy Agent",
+        "Maintenance Agent"
+    ]
+)
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
         st.rerun()
@@ -195,3 +200,221 @@ else:
             ].head(20),
             use_container_width=True
         )
+    # MAINTENANCE AGENT
+    elif page == "Maintenance Agent":
+
+        st.title("🔧 Maintenance Intelligence")
+        st.caption("AI-powered equipment health and predictive maintenance")
+
+        # Load maintenance data
+        maintenance_data = pd.read_csv(
+            "data/maintenance_data.csv"
+        )
+
+        maintenance_data["timestamp"] = pd.to_datetime(
+            maintenance_data["timestamp"]
+        )
+
+        
+        # KEY METRICS
+        
+
+        total_machines = maintenance_data["machine_id"].nunique()
+
+        critical_records = maintenance_data[
+            (maintenance_data["rul_hours"] < 24) |
+            (maintenance_data["failure_within_24h"] == 1)
+        ]
+
+        critical_machines = critical_records[
+            "machine_id"
+        ].nunique()
+
+        healthy_machines = total_machines - critical_machines
+
+        abnormal_records = maintenance_data[
+            (maintenance_data["vibration_rms"] >
+             maintenance_data["vibration_rms"].quantile(0.90)) |
+            (maintenance_data["temperature_motor"] >
+             maintenance_data["temperature_motor"].quantile(0.90))
+        ]
+
+        abnormal_machines = abnormal_records[
+            "machine_id"
+        ].nunique()
+
+        
+        # DISPLAY METRICS
+        
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        col1.metric(
+            "Total Equipment",
+            total_machines
+        )
+
+        col2.metric(
+            "Healthy Equipment",
+            healthy_machines
+        )
+
+        col3.metric(
+            "Critical Equipment",
+            critical_machines
+        )
+
+        col4.metric(
+            "Abnormal Equipment",
+            abnormal_machines
+        )
+
+        st.divider()
+
+        
+        # EQUIPMENT HEALTH
+    
+
+        st.subheader("🏭 Equipment Health Monitoring")
+
+        health_data = maintenance_data.groupby(
+            "machine_id"
+        ).agg(
+            machine_type=("machine_type", "first"),
+            vibration=("vibration_rms", "mean"),
+            motor_temperature=("temperature_motor", "mean"),
+            RUL_hours=("rul_hours", "min"),
+            hours_since_maintenance=(
+                "hours_since_maintenance",
+                "max"
+            )
+        ).reset_index()
+
+        health_data["status"] = health_data.apply(
+            lambda row:
+            "🔴 Critical"
+            if row["RUL_hours"] < 24
+            else "🟡 Monitoring"
+            if row["RUL_hours"] < 72
+            else "🟢 Healthy",
+            axis=1
+        )
+
+        st.dataframe(
+            health_data,
+            use_container_width=True
+        )
+
+        st.divider()
+
+        # -----------------------------
+        # MAINTENANCE ANALYTICS CHARTS
+        # -----------------------------
+
+        st.subheader("📊 Maintenance Analytics")
+
+        # Get the latest reading for each machine
+        latest_data = (
+            maintenance_data
+            .sort_values("timestamp")
+            .groupby("machine_id")
+            .tail(1)
+        )
+
+        # RUL chart
+        st.write("🔮 Remaining Useful Life by Machine")
+
+        rul_chart = latest_data[
+            ["machine_id", "rul_hours"]
+        ].set_index("machine_id")
+
+        st.bar_chart(rul_chart)
+
+        # Vibration chart
+        st.write("📳 Machine Vibration Levels")
+
+        vibration_chart = latest_data[
+            ["machine_id", "vibration_rms"]
+        ].set_index("machine_id")
+
+        st.bar_chart(vibration_chart)
+        st.divider()
+
+        
+        # AI RECOMMENDATION
+        
+
+        st.subheader("🤖 AI Maintenance Recommendation")
+
+        if critical_machines > 0:
+
+            st.warning(
+                f"⚠️ {critical_machines} equipment unit(s) "
+                "require maintenance attention."
+            )
+
+            st.write(
+                "💡 Recommendation: Schedule preventive "
+                "maintenance for equipment with low RUL "
+                "or predicted failure within 24 hours."
+            )
+
+        else:
+
+            st.success(
+                "✅ No critical equipment detected."
+            )
+
+        st.divider()
+
+        
+        # WORK ORDERS
+        
+
+        st.subheader("📋 Maintenance Work Orders")
+
+        work_orders = health_data[
+            health_data["status"] == "🔴 Critical"
+        ].copy()
+
+        if len(work_orders) > 0:
+
+            work_orders["Priority"] = "HIGH"
+            work_orders["Action"] = (
+                "Schedule Preventive Maintenance"
+            )
+
+            st.dataframe(
+                work_orders[
+                    [
+                        "machine_id",
+                        "machine_type",
+                        "RUL_hours",
+                        "Priority",
+                        "Action"
+                    ]
+                ],
+                use_container_width=True
+            )
+
+        else:
+
+            st.success(
+                "No urgent work orders required."
+            )
+
+        st.divider()
+
+        
+        # DOWNTIME REDUCTION
+        
+
+        st.subheader("⏱️ Downtime Risk Reduction")
+
+        st.info(
+            "The Maintenance Agent identifies equipment "
+            "with high failure risk and recommends preventive "
+            "maintenance to reduce the possibility of "
+            "unexpected downtime."
+        )
+    
