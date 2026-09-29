@@ -16,3 +16,4 @@ __pycache__/
 Thumbs.db
 .DS_Store
 users.db
+data/Facility Management Unified Classification Database (FMUCD).csv

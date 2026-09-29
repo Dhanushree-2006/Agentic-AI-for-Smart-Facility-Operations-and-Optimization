@@ -70,7 +70,10 @@ else:
     [
         "Energy Dashboard",
         "Energy Agent",
-        "Maintenance Agent"
+        "Maintenance Agent",
+        "Occupancy Dashboard",
+        "Security Dashboard",
+        "Cost Optimization Dashboard"
     ]
 )
     if st.sidebar.button("Logout"):
@@ -417,4 +420,1190 @@ else:
             "maintenance to reduce the possibility of "
             "unexpected downtime."
         )
-    
+    # OCCUPANCY DASHBOARD
+
+    elif page == "Occupancy Dashboard":
+
+        st.title("👥 Occupancy Intelligence Dashboard")
+        st.caption(
+            "AI-powered room occupancy and space utilization"
+        )
+
+        # Load occupancy datasets
+        rooms = {
+            "Room 1": "data/combined_Room1.csv",
+            "Room 2": "data/combined_Room2.csv",
+            "Room 3": "data/combined_Room3.csv",
+            "Room 4": "data/combined_Room4.csv",
+            "Room 5": "data/combined_Room5.csv"
+        }
+        
+
+        occupancy_results = []
+
+        for room_name, file_path in rooms.items():
+
+            room_data = pd.read_csv(file_path)
+
+            total_records = len(room_data)
+
+            present_records = (
+                room_data["occupant_presence"] == 1
+            ).sum()
+
+            occupancy_rate = (
+                present_records / total_records
+            ) * 100
+
+            average_occupants = (
+                room_data["occupant_count"].mean()
+            )
+
+            maximum_occupants = (
+                room_data["occupant_count"].max()
+            )
+
+            if occupancy_rate < 30:
+                utilization = "Under-utilized"
+            elif occupancy_rate <= 70:
+                utilization = "Moderately utilized"
+            else:
+                utilization = "Highly utilized"
+
+            if occupancy_rate >= 70:
+                alert = "High Occupancy"
+            else:
+                alert = "Normal"
+
+            occupancy_results.append({
+                "Room": room_name,
+                "Average Occupants": round(
+                    average_occupants, 2
+                ),
+                "Maximum Occupants": int(
+                    maximum_occupants
+                ),
+                "Occupancy Rate": round(
+                    occupancy_rate, 2
+                ),
+                "Utilization": utilization,
+                "Alert": alert
+            })
+
+        occupancy_df = pd.DataFrame(
+            occupancy_results
+        )
+               
+        # KEY METRICS
+        
+
+        total_rooms = len(occupancy_df)
+
+        average_occupancy = (
+            occupancy_df["Average Occupants"].mean()
+        )
+
+        under_utilized = (
+            occupancy_df["Utilization"] ==
+            "Under-utilized"
+        ).sum()
+
+        high_occupancy = (
+            occupancy_df["Alert"] ==
+            "High Occupancy"
+        ).sum()
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        col1.metric(
+            "🏢 Total Rooms",
+            total_rooms
+        )
+
+        col2.metric(
+            "👥 Average Occupants",
+            f"{average_occupancy:.2f}"
+        )
+
+        col3.metric(
+            "🟠 Under-utilized Rooms",
+            under_utilized
+        )
+
+        col4.metric(
+            "🔴 High Occupancy Rooms",
+            high_occupancy
+        )
+
+        st.divider()
+                
+        # ROOM-WISE OCCUPANCY GRAPH
+        
+
+        st.subheader("📊 Room-wise Occupancy Rate")
+
+        occupancy_chart = occupancy_df[
+            ["Room", "Occupancy Rate"]
+        ].set_index("Room")
+
+        st.bar_chart(
+            occupancy_chart
+        )
+
+        st.divider()
+            
+        # AVERAGE OCCUPANTS GRAPH
+        
+
+        st.subheader("👥 Average Occupants by Room")
+
+        average_chart = occupancy_df[
+            ["Room", "Average Occupants"]
+        ].set_index("Room")
+
+        st.bar_chart(
+            average_chart
+        )
+
+        st.divider()
+               
+        # UTILIZATION STATUS
+        
+
+        st.subheader("📊 Room Utilization Status")
+
+        utilization_counts = (
+            occupancy_df["Utilization"]
+            .value_counts()
+        )
+
+        st.bar_chart(
+            utilization_counts
+        )
+
+        st.divider()
+                
+        # AI OCCUPANCY INSIGHTS
+        
+
+        st.subheader("🤖 AI Occupancy Insights")
+
+        for _, row in occupancy_df.iterrows():
+
+            if row["Utilization"] == "Under-utilized":
+
+                st.warning(
+                    f"⚠️ {row['Room']} is under-utilized "
+                    f"with {row['Occupancy Rate']:.2f}% occupancy. "
+                    f"Consider optimizing space usage."
+                )
+
+            elif row["Alert"] == "High Occupancy":
+
+                st.error(
+                    f"🔴 {row['Room']} has high occupancy "
+                    f"({row['Occupancy Rate']:.2f}%). "
+                    f"Monitor space availability."
+                )
+
+            else:
+
+                st.success(
+                    f"🟢 {row['Room']} is operating within "
+                    f"the normal utilization range."
+                )
+
+        st.divider()
+                
+        # OCCUPANCY TREND
+       
+
+        st.subheader("📈 Occupancy Trend - Room 1")
+
+        room1_data = pd.read_csv(
+            "data/combined_Room1.csv"
+        )
+
+        room1_data["timestamp"] = pd.to_datetime(
+            room1_data["timestamp"]
+        )
+
+        trend_data = (
+            room1_data[
+                ["timestamp", "occupant_count"]
+            ]
+            .set_index("timestamp")
+            .resample("1h")
+            .mean()
+        )
+
+        st.line_chart(
+            trend_data
+        )
+
+        st.divider()
+            
+        # CO2 VS OCCUPANCY
+        
+
+        st.subheader("🌫️ CO₂ vs Occupancy - Room 1")
+
+        co2_occupancy = (
+            room1_data[
+                ["timestamp", "indoor_co2", "occupant_count"]
+            ]
+            .set_index("timestamp")
+            .resample("1h")
+            .mean()
+        )
+
+        st.line_chart(
+            co2_occupancy
+        )
+
+        st.divider()
+            
+        # ROOM UTILIZATION COMPARISON
+        
+
+        st.subheader("🏢 Room Utilization Comparison")
+
+        utilization_chart = occupancy_df[
+            ["Room", "Occupancy Rate"]
+        ].set_index("Room")
+
+        st.bar_chart(
+            utilization_chart
+        )
+
+        st.divider()
+        
+        # OCCUPANCY SUMMARY
+        
+        st.subheader("🧠 Occupancy Intelligence Summary")
+
+        busiest_room = occupancy_df.loc[
+            occupancy_df["Occupancy Rate"].idxmax(),
+            "Room"
+        ]
+
+        least_used_room = occupancy_df.loc[
+            occupancy_df["Occupancy Rate"].idxmin(),
+            "Room"
+        ]
+
+        st.info(
+            f"🏢 **Busiest Room:** {busiest_room}  \n"
+            f"🟠 **Least Utilized Room:** {least_used_room}  \n"
+            f"📊 **Rooms Monitored:** {total_rooms}  \n"
+            f"👥 **Average Occupants:** {average_occupancy:.2f}"
+        )
+
+        st.divider()
+        
+        # PEAK OCCUPANCY
+        
+
+        st.subheader("🔴 Peak Occupancy by Room")
+
+        peak_occupancy = occupancy_df[
+            ["Room", "Maximum Occupants"]
+        ].set_index("Room")
+
+        st.bar_chart(
+            peak_occupancy
+        )
+
+        st.divider()
+            
+        # HOURLY OCCUPANCY PATTERN
+        
+
+        st.subheader("🕒 Hourly Occupancy Pattern - Room 1")
+
+        hourly_occupancy = (
+            room1_data
+            .assign(
+                hour=room1_data["timestamp"].dt.hour
+            )
+            .groupby("hour")["occupant_count"]
+            .mean()
+        )
+
+        st.line_chart(
+            hourly_occupancy
+        )
+
+        st.divider()
+            
+        # AI RECOMMENDATIONS
+        
+
+        st.subheader("💡 AI Space Optimization Recommendations")
+
+        for _, row in occupancy_df.iterrows():
+
+            if row["Utilization"] == "Under-utilized":
+                st.warning(
+                    f"🟠 {row['Room']}: Consider reallocating activities "
+                    f"or optimizing the available space."
+                )
+
+            elif row["Utilization"] == "Highly utilized":
+                st.error(
+                    f"🔴 {row['Room']}: High utilization detected. "
+                    f"Monitor space availability and capacity."
+                )
+
+            else:
+                st.success(
+                    f"🟢 {row['Room']}: Space utilization is within "
+                    f"the normal range."
+                )
+
+        st.divider()
+
+        # ROOM-WISE DETAILS
+
+
+        st.subheader("📋 Room-wise Occupancy Details")
+
+        st.dataframe(
+            occupancy_df,
+            use_container_width=True
+        )
+
+        st.divider()
+            
+        # FINAL OCCUPANCY DASHBOARD SUMMARY
+        
+
+
+        st.subheader("📊 Facility Occupancy Overview")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            busiest_room = occupancy_df.loc[
+                occupancy_df["Occupancy Rate"].idxmax(),
+                "Room"
+            ]
+
+            busiest_rate = occupancy_df["Occupancy Rate"].max()
+
+            st.metric(
+                "🔴 Busiest Room",
+                busiest_room,
+                f"{busiest_rate:.2f}% occupancy"
+            )
+
+        with col2:
+            least_used_room = occupancy_df.loc[
+                occupancy_df["Occupancy Rate"].idxmin(),
+                "Room"
+            ]
+
+            least_used_rate = occupancy_df["Occupancy Rate"].min()
+
+            st.metric(
+                "🟠 Least Utilized Room",
+                least_used_room,
+                f"{least_used_rate:.2f}% occupancy"
+            )
+
+        st.divider()
+
+        
+        
+    # SECURITY DASHBOARD
+    # ============================================================
+
+    elif page == "Security Dashboard":
+
+        st.title("🔐 Security Intelligence Dashboard")
+
+        st.caption(
+            "AI-powered security monitoring, risk detection and "
+            "access intelligence"
+        )
+
+        security_data = pd.read_csv(
+            "data/insider_threat_clean_dataset.csv"
+        )
+
+        # SECURITY CALCULATIONS
+
+        total_activities = len(security_data)
+
+        malicious_activities = (
+            security_data["is_malicious"] == 1
+        ).sum()
+
+        normal_activities = (
+            security_data["is_malicious"] == 0
+        ).sum()
+
+        malicious_rate = (
+            malicious_activities / total_activities
+        ) * 100
+
+        total_entries = security_data[
+            "num_entries"
+        ].sum()
+
+        weekend_entries = (
+            security_data["entry_during_weekend"] == 1
+        ).sum()
+
+        late_exit = (
+            security_data["late_exit_flag"] == 1
+        ).sum()
+
+        # SECURITY RISK
+
+        if malicious_rate > 5:
+            risk_level = "HIGH"
+        elif malicious_rate > 1:
+            risk_level = "MEDIUM"
+        else:
+            risk_level = "LOW"
+
+        # KEY METRICS
+
+        st.subheader("🛡️ Security Overview")
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        col1.metric(
+            "🔐 Security Activities",
+            f"{total_activities:,}"
+        )
+
+        col2.metric(
+            "🔴 Malicious Activities",
+            f"{malicious_activities:,}"
+        )
+
+        col3.metric(
+            "📊 Malicious Rate",
+            f"{malicious_rate:.2f}%"
+        )
+
+        col4.metric(
+            "🚨 Risk Level",
+            risk_level
+        )
+
+        st.divider()
+
+        # ACCESS METRICS
+
+        col1, col2, col3 = st.columns(3)
+
+        col1.metric(
+            "🚪 Total Entries",
+            f"{total_entries:,}"
+        )
+
+        col2.metric(
+            "🟠 Weekend Entries",
+            f"{weekend_entries:,}"
+        )
+
+        col3.metric(
+            "🌙 Late Exits",
+            f"{late_exit:,}"
+        )
+
+        st.divider()
+
+        # CAMPUS ANALYSIS
+
+        st.subheader("🏢 Campus-wise Security Analysis")
+
+        campus_analysis = (
+            security_data
+            .groupby("employee_campus")
+            .agg(
+                Total_Activities=("is_malicious", "count"),
+                Malicious_Activities=("is_malicious", "sum"),
+                Total_Entries=("num_entries", "sum")
+            )
+            .reset_index()
+        )
+
+        campus_analysis["Malicious_Rate"] = (
+            campus_analysis["Malicious_Activities"]
+            / campus_analysis["Total_Activities"]
+        ) * 100
+
+        st.dataframe(
+            campus_analysis,
+            use_container_width=True
+        )
+
+        # CAMPUS MALICIOUS ACTIVITY
+
+        st.subheader("🔴 Malicious Activity by Campus")
+
+        campus_chart = campus_analysis[
+            [
+                "employee_campus",
+                "Malicious_Activities"
+            ]
+        ].set_index("employee_campus")
+
+        st.bar_chart(campus_chart)
+
+        st.divider()
+
+        # CAMPUS MALICIOUS RATE
+
+        st.subheader("📊 Malicious Activity Rate by Campus")
+
+        campus_rate_chart = campus_analysis[
+            [
+                "employee_campus",
+                "Malicious_Rate"
+            ]
+        ].set_index("employee_campus")
+
+        st.bar_chart(campus_rate_chart)
+
+        st.divider()
+
+        # DEPARTMENT ANALYSIS
+
+        st.subheader("🏢 Department-wise Security Analysis")
+
+        department_analysis = (
+            security_data
+            .groupby("employee_department")
+            .agg(
+                Total_Activities=("is_malicious", "count"),
+                Malicious_Activities=("is_malicious", "sum"),
+                Total_Entries=("num_entries", "sum")
+            )
+            .reset_index()
+        )
+
+        department_analysis["Malicious_Rate"] = (
+            department_analysis["Malicious_Activities"]
+            / department_analysis["Total_Activities"]
+        ) * 100
+
+        st.dataframe(
+            department_analysis,
+            use_container_width=True
+        )
+
+        st.subheader("🔴 Malicious Activities by Department")
+
+        department_chart = department_analysis[
+            [
+                "employee_department",
+                "Malicious_Activities"
+            ]
+        ].set_index("employee_department")
+
+        st.bar_chart(department_chart)
+
+        st.divider()
+
+        # WEEKEND ACCESS
+
+        st.subheader("📅 Weekend Access Monitoring")
+
+        weekend_normal = (
+            security_data["entry_during_weekend"] == 0
+        ).sum()
+
+        weekend_activity = (
+            security_data["entry_during_weekend"] == 1
+        ).sum()
+
+        weekend_chart = pd.DataFrame(
+            {
+                "Activities": [
+                    weekend_normal,
+                    weekend_activity
+                ]
+            },
+            index=[
+                "Regular Access",
+                "Weekend Access"
+            ]
+        )
+
+        st.bar_chart(weekend_chart)
+
+        st.divider()
+
+        # NORMAL VS MALICIOUS
+
+        st.subheader("🛡️ Normal vs Malicious Activities")
+
+        activity_chart = pd.DataFrame(
+            {
+                "Activities": [
+                    normal_activities,
+                    malicious_activities
+                ]
+            },
+            index=[
+                "Normal",
+                "Malicious"
+            ]
+        )
+
+        st.bar_chart(activity_chart)
+
+        st.divider()
+
+        # SECURITY RISK
+
+        st.subheader("🚨 Security Risk Assessment")
+
+        if risk_level == "HIGH":
+
+            st.error(
+                f"🔴 HIGH SECURITY RISK\n\n"
+                f"Malicious activity rate is "
+                f"{malicious_rate:.2f}%."
+            )
+
+        elif risk_level == "MEDIUM":
+
+            st.warning(
+                f"🟠 MEDIUM SECURITY RISK\n\n"
+                f"Malicious activity rate is "
+                f"{malicious_rate:.2f}%."
+            )
+
+        else:
+
+            st.success(
+                f"🟢 LOW SECURITY RISK\n\n"
+                f"Malicious activity rate is "
+                f"{malicious_rate:.2f}%."
+            )
+
+        st.divider()
+
+        # AI SECURITY INSIGHTS
+
+        st.subheader("🤖 AI Security Insights")
+
+        highest_risk_campus = campus_analysis.loc[
+            campus_analysis["Malicious_Rate"].idxmax(),
+            "employee_campus"
+        ]
+
+        highest_risk_rate = campus_analysis[
+            "Malicious_Rate"
+        ].max()
+
+        st.info(
+            f"🏢 **Highest-risk campus:** "
+            f"{highest_risk_campus} "
+            f"({highest_risk_rate:.2f}% malicious activity)"
+        )
+
+        st.info(
+            f"🔴 **Malicious activities detected:** "
+            f"{malicious_activities:,}"
+        )
+
+        st.info(
+            f"📅 **Weekend access activities:** "
+            f"{weekend_entries:,}"
+        )
+
+        st.info(
+            f"🌙 **Late-exit activities:** "
+            f"{late_exit:,}"
+        )
+
+        st.divider()
+
+        # AI RECOMMENDATIONS
+
+        st.subheader("💡 AI Security Recommendations")
+
+        if malicious_activities > 0:
+
+            st.warning(
+                "🔴 Investigate employees associated "
+                "with malicious activity."
+            )
+
+        if weekend_entries > 0:
+
+            st.warning(
+                "🟠 Review unusual weekend access activity "
+                "for potential security risks."
+            )
+
+        if late_exit > 0:
+
+            st.warning(
+                "🌙 Monitor repeated late-exit behavior."
+            )
+
+        st.success(
+            "🏢 Continuously monitor campus and "
+            "department-level security patterns."
+        )
+
+        st.success(
+            "🚨 Trigger security alerts when "
+            "high-risk behavior is detected."
+        )
+
+        st.divider()
+
+        # SECURITY DATA
+
+        st.subheader("📋 Security Activity Data")
+
+        st.dataframe(
+            security_data.head(100),
+            use_container_width=True
+        )
+            # ============================================================
+    # COST OPTIMIZATION DASHBOARD
+    # ============================================================
+
+    elif page == "Cost Optimization Dashboard":
+
+        st.title("💰 Cost Optimization Dashboard")
+
+        st.caption(
+            "AI-powered facility cost monitoring, analysis and optimization"
+        )
+
+        # --------------------------------------------------------
+        # LOAD COST DATA
+        # --------------------------------------------------------
+
+        cost_data = pd.read_csv(
+            "data/cost_data.csv"
+        )
+
+        cost_data["report_date"] = pd.to_datetime(
+            cost_data["report_date"],
+            errors="coerce"
+        )
+
+        cost_data["amount"] = pd.to_numeric(
+            cost_data["amount"],
+            errors="coerce"
+        )
+
+        cost_data = cost_data.dropna(
+            subset=["amount", "report_date"]
+        )
+
+        # --------------------------------------------------------
+        # KEY METRICS
+        # --------------------------------------------------------
+
+        total_cost = cost_data["amount"].sum()
+
+        total_records = len(cost_data)
+
+        average_cost = cost_data["amount"].mean()
+
+        highest_cost = cost_data["amount"].max()
+
+        category_analysis = (
+            cost_data
+            .groupby("category")
+            .agg(
+                Total_Cost=("amount", "sum"),
+                Average_Cost=("amount", "mean"),
+                Number_of_Records=("amount", "count")
+            )
+            .reset_index()
+            .sort_values(
+                "Total_Cost",
+                ascending=False
+            )
+        )
+
+        highest_cost_category = (
+            category_analysis.iloc[0]["category"]
+        )
+
+        highest_category_cost = (
+            category_analysis.iloc[0]["Total_Cost"]
+        )
+
+        cost_concentration = (
+            highest_category_cost / total_cost
+        ) * 100
+
+                # --------------------------------------------------------
+        # EXECUTIVE COST OVERVIEW
+        # --------------------------------------------------------
+
+        st.subheader("👔 Executive Cost Overview")
+
+        st.caption(
+            "Management-level summary of facility expenditure, "
+            "cost concentration and optimization risk"
+        )
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        col1.metric(
+            "💰 Total Facility Cost",
+            f"{total_cost:,.2f}"
+        )
+
+        col2.metric(
+            "📋 Cost Records",
+            f"{total_records:,}"
+        )
+
+        col3.metric(
+            "💵 Average Work Order Cost",
+            f"{average_cost:,.2f}"
+        )
+
+        col4.metric(
+            "🏢 Highest Cost Category",
+            highest_cost_category
+        )
+
+        st.divider()
+
+        # --------------------------------------------------------
+        # EXECUTIVE COST RISK
+        # --------------------------------------------------------
+
+        st.subheader("🚨 Executive Cost Risk")
+
+        risk_col1, risk_col2, risk_col3 = st.columns(3)
+
+        with risk_col1:
+            st.metric(
+                "Cost Concentration",
+                f"{cost_concentration:.2f}%"
+            )
+
+        with risk_col2:
+
+            if cost_concentration >= 40:
+                risk_level = "HIGH"
+
+            elif cost_concentration >= 20:
+                risk_level = "MEDIUM"
+
+            else:
+                risk_level = "LOW"
+
+            st.metric(
+                "Cost Risk Level",
+                risk_level
+            )
+
+        with risk_col3:
+            st.metric(
+                "Highest Category Cost",
+                f"{highest_category_cost:,.2f}"
+            )
+
+        if cost_concentration >= 40:
+
+            st.error(
+                f"🔴 HIGH COST CONCENTRATION\n\n"
+                f"{highest_cost_category} accounts for "
+                f"{cost_concentration:.2f}% of total facility cost. "
+                f"Management attention is recommended for this category."
+            )
+
+        elif cost_concentration >= 20:
+
+            st.warning(
+                f"🟠 MEDIUM COST CONCENTRATION\n\n"
+                f"{highest_cost_category} accounts for "
+                f"{cost_concentration:.2f}% of total facility cost. "
+                f"The category should be monitored for optimization opportunities."
+            )
+
+        else:
+
+            st.success(
+                "🟢 LOW COST CONCENTRATION\n\n"
+                "Facility costs are distributed across multiple categories."
+            )
+
+        st.divider()
+
+        # --------------------------------------------------------
+        # EXECUTIVE INSIGHT
+        # --------------------------------------------------------
+
+        st.subheader("🧠 Executive AI Insight")
+
+        st.info(
+            f"💰 **Facility expenditure:** "
+            f"{total_cost:,.2f}\n\n"
+            f"🏢 **Primary cost driver:** "
+            f"{highest_cost_category}\n\n"
+            f"📊 **Cost concentration:** "
+            f"{cost_concentration:.2f}% of total expenditure\n\n"
+            f"🎯 **Management focus:** "
+            f"Review {highest_cost_category} expenses and identify "
+            f"potential cost optimization opportunities."
+        )
+
+        st.divider()
+
+        # --------------------------------------------------------
+        # CATEGORY-WISE COST
+        # --------------------------------------------------------
+
+        # --------------------------------------------------------
+        # CATEGORY-WISE COST
+        # --------------------------------------------------------
+
+        st.subheader("📊 Cost by Category")
+
+        category_chart = (
+            category_analysis[
+                ["category", "Total_Cost"]
+            ]
+            .set_index("category")
+        )
+
+        st.bar_chart(
+            category_chart
+        )
+
+        st.divider()
+
+        # --------------------------------------------------------
+        # MONTHLY COST TREND
+        # --------------------------------------------------------
+
+        st.subheader("📈 Monthly Facility Cost Trend")
+
+        cost_data["month"] = (
+            cost_data["report_date"]
+            .dt.to_period("M")
+            .astype(str)
+        )
+
+        monthly_cost = (
+            cost_data
+            .groupby("month")["amount"]
+            .sum()
+            .reset_index()
+        )
+
+        monthly_cost = monthly_cost.sort_values(
+            "month"
+        )
+
+        monthly_chart = (
+            monthly_cost
+            .set_index("month")
+        )
+
+        st.line_chart(
+            monthly_chart
+        )
+
+        st.divider()
+
+        # --------------------------------------------------------
+        # CATEGORY ANALYSIS TABLE
+        # --------------------------------------------------------
+
+        st.subheader("📋 Category-wise Cost Analysis")
+
+        st.dataframe(
+            category_analysis,
+            use_container_width=True
+        )
+
+        st.divider()
+
+        # --------------------------------------------------------
+        # COST CONCENTRATION
+        # --------------------------------------------------------
+
+        st.subheader("⚠️ Cost Concentration Analysis")
+
+        st.metric(
+            "Highest Cost Category",
+            highest_cost_category,
+            f"{cost_concentration:.2f}% of total cost"
+        )
+
+        if cost_concentration >= 40:
+
+            st.error(
+                "🔴 High cost concentration detected. "
+                "A large portion of facility expenses is "
+                "concentrated in one category."
+            )
+
+        elif cost_concentration >= 20:
+
+            st.warning(
+                "🟠 Medium cost concentration detected. "
+                "The highest-cost category should be monitored "
+                "for optimization opportunities."
+            )
+
+        else:
+
+            st.success(
+                "🟢 Facility costs are relatively distributed "
+                "across categories."
+            )
+
+        st.divider()
+                # --------------------------------------------------------
+        # SAVINGS OPPORTUNITY ENGINE
+        # --------------------------------------------------------
+
+        st.subheader("💡 Savings Opportunity Engine")
+
+        st.caption(
+            "Estimated cost-saving opportunities based on "
+            "historical cost concentration"
+        )
+
+        # Determine optimization rate
+        if cost_concentration >= 40:
+            savings_rate = 0.15
+        elif cost_concentration >= 20:
+            savings_rate = 0.10
+        else:
+            savings_rate = 0.05
+
+        estimated_saving = (
+            highest_category_cost * savings_rate
+        )
+
+        # Savings metrics
+        saving_col1, saving_col2, saving_col3 = st.columns(3)
+
+        with saving_col1:
+            st.metric(
+                "🎯 Optimization Rate",
+                f"{savings_rate * 100:.0f}%"
+            )
+
+        with saving_col2:
+            st.metric(
+                "💰 Potential Saving",
+                f"{estimated_saving:,.2f}"
+            )
+
+        with saving_col3:
+            st.metric(
+                "🏢 Target Category",
+                highest_cost_category
+            )
+
+        st.info(
+            f"💡 The system identified a potential optimization "
+            f"opportunity of **{estimated_saving:,.2f}** in "
+            f"**{highest_cost_category}**."
+        )
+
+        st.warning(
+            "⚠️ This is an estimated optimization opportunity "
+            "based on a rule-based assumption, not actual realized savings."
+        )
+
+        st.divider()
+
+        # --------------------------------------------------------
+        # AI COST INSIGHTS
+        # --------------------------------------------------------
+
+        st.subheader("🤖 AI Cost Optimization Insights")
+
+        st.info(
+            f"💰 Total facility cost analyzed: "
+            f"{total_cost:,.2f}"
+        )
+
+        st.info(
+            f"🏢 Highest-cost category: "
+            f"{highest_cost_category}"
+        )
+
+        st.info(
+            f"📊 {highest_cost_category} represents "
+            f"{cost_concentration:.2f}% of total facility cost."
+        )
+
+        # --------------------------------------------------------
+        # AI RECOMMENDATIONS
+        # --------------------------------------------------------
+
+        st.subheader(
+            "💡 AI Cost Optimization Recommendations"
+        )
+
+        if highest_cost_category == "HVAC":
+
+            st.warning(
+                "⚡ HVAC is the highest-cost category. "
+                "Review HVAC operation, maintenance schedules "
+                "and energy consumption for cost-saving opportunities."
+            )
+
+        else:
+
+            st.warning(
+                f"🔎 Review {highest_cost_category} expenses "
+                "to identify major cost-saving opportunities."
+            )
+
+        st.success(
+            "⚡ Use Energy Agent results to identify "
+            "energy-related cost reduction opportunities."
+        )
+
+        st.success(
+            "🔧 Use Maintenance Agent results to identify "
+            "equipment-related maintenance cost opportunities."
+        )
+
+        st.success(
+            "👥 Use Occupancy Agent results to identify "
+            "space utilization and facility optimization opportunities."
+        )
+
+        st.success(
+            "🔐 Use Security Agent results to monitor "
+            "security-related operational activities."
+        )
+
+        st.success(
+            "📈 Continuously monitor monthly facility costs "
+            "and investigate significant increases."
+        )
+
+        st.divider()
+
+        # --------------------------------------------------------
+        # COST DATA
+        # --------------------------------------------------------
+
+        st.subheader("📋 Cost Activity Data")
+
+        st.dataframe(
+            cost_data.head(100),
+            use_container_width=True
+        )
+
+        
